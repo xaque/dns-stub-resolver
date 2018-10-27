@@ -1,11 +1,11 @@
-#include<arpa/inet.h>
-#include<netinet/in.h>
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-#include<time.h>
-#include<sys/types.h>
-#include<sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <assert.h>
 
 typedef unsigned int dns_rr_ttl;
@@ -119,6 +119,7 @@ int name_ascii_to_wire(char *name, unsigned char *wire) {
   int i = 0;
   //Break up hostname by . delimiter
   char* pch = strtok(name, ".");
+  //printf("%s\n", pch);
   while (pch){
     int len = strlen(pch);
     wire[i++] = (unsigned short) len;
@@ -193,10 +194,10 @@ char *name_ascii_from_wire(unsigned char *wire, int *indexp) {
     //printf("cur:%x\n", ptr_i);
     //Prevent infinite loops by breaking if you've already been to this pointer
 
-    // if (isvalueinarray(ptr_i, tmpstk, inptr)){
-    //   (*indexp)++;
-    //   break;
-    // }
+     if (isvalueinarray(ptr_i, tmpstk, inptr)){
+       (*indexp)++;
+       break;
+     }
     if (hasbeen && ptr_i >= starti){
       (*indexp)++;
       break;
@@ -301,6 +302,7 @@ dns_answer_entry *get_answer_address(char *qname, dns_rr_type qtype, unsigned ch
   //Loop for each Answer entry given
   for (int j = 0; j < num_ans; j++){
     char* name = name_ascii_from_wire(wire, &i);
+    //printf("%s %s\n", "Got name:", name);
     dns_answer_entry* ans = head_entry;
     if (strcmp(name, qname) == 0){
       unsigned short type = ((int) wire[i++] << 8) | (int) wire[i++];
@@ -327,6 +329,7 @@ dns_answer_entry *get_answer_address(char *qname, dns_rr_type qtype, unsigned ch
       }
       else if (type == 0x05){//CNAME record
         char* cname = name_ascii_from_wire(wire, &i);
+        //printf("%s %s\n", "CNAME: ", cname);
         qname = cname;
         dns_answer_entry* oldentry = *cur_entry;
         oldentry->value = cname;
@@ -441,9 +444,12 @@ dns_answer_entry *resolve(char *qname, char *server) {
   //If the response doesn't have a matching query ID, something went wrong.
   unsigned short ans_qid = ((int)response[0] << 8) | (int) response[1];
   if (qid != ans_qid || rlen < 12){
+    //printf("%s\n", "Bad response");
+    exit(0);
     return NULL;
   }
   dns_answer_entry* finans = get_answer_address(origname, 0x01, response);
+  //printf("%s\n", "Parsed response");
   free(origname);
   free(dnsreq);
   free(response);
@@ -455,9 +461,10 @@ int main(int argc, char *argv[]) {
   dns_answer_entry *ans;
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <domain name> <server>\n", argv[0]);
-    exit(1);
+    exit(0);
   }
   ans = resolve(argv[1], argv[2]);
+  //printf("%s\n", "Talked to server.");
   while (ans->next) {
     printf("%s\n", ans->value);
     dns_answer_entry* tmp = ans;

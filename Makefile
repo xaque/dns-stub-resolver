@@ -4,7 +4,7 @@
 #
 # Makefile for the CS:APP Shell Lab
 
-BYUNETID = NOBODY
+BYUNETID = anderzt
 VERSION = 1
 HANDINDIR = /users/faculty/snell/CS324/handin/Fall2018/DNSResolver
 
